@@ -14,7 +14,7 @@ from model_final import *
 from utils.image_reader import (
     RandomTransformer,
     SegmentationDataGenerator)
-
+from keras.utils.multi_gpu_utils import multi_gpu_model
 
 @click.command()
 @click.option('--train-list-fname', type=click.Path(exists=True),
@@ -26,7 +26,7 @@ from utils.image_reader import (
 @click.option('--mask-root', type=click.Path(exists=True),
               default='./VOCdevkit/VOC2012/SegmentationClass')
 @click.option('--batch-size', type=int, default=1)
-@click.option('--learning-rate', type=float, default=1e-4)
+@click.option('--learning-rate', type=float, default=1e-7)
 def train(train_list_fname,
           val_list_fname,
           img_root,
@@ -56,7 +56,7 @@ def train(train_list_fname,
     model_checkpoint = callbacks.ModelCheckpoint(
         checkpoints_folder + '/ep{epoch:02d}-vl{val_loss:.4f}.hdf5',
         monitor='loss')
-	
+
 
     '''tensorboard_cback = callbacks.TensorBoard(
         log_dir='{}/tboard'.format(checkpoints_folder),
@@ -72,10 +72,10 @@ def train(train_list_fname,
         verbose=1,
         min_lr=0.05 * learning_rate)'''
 
-    model = DPN((512,512,3))
-
+    model = DPN((224,224,3))
+    model = multi_gpu_model(model, gpus=2)
     model.compile(loss='sparse_categorical_crossentropy',
-                  optimizer=optimizers.SGD(lr=learning_rate, momentum=0.9),
+                  optimizer=optimizers.SGD(lr=1e-50,clipnorm=1.),
                   metrics=['accuracy'])
 
     # Build absolute image paths
@@ -100,17 +100,17 @@ def train(train_list_fname,
             train_img_fnames,
             train_mask_fnames,
             shuffle=True,
-            batch_size=batch_size,
-            img_target_size=(512, 512),
-            mask_target_size=(512, 512)),
-        steps_per_epoch=4,
+            batch_size=4,
+            img_target_size=(224, 224),
+            mask_target_size=(224, 224)),
+        steps_per_epoch=len(train_basenames),
         epochs=20,
         validation_data=datagen_val.flow_from_list(
             val_img_fnames,
             val_mask_fnames,
             batch_size=4,
-            img_target_size=(512, 512),
-            mask_target_size=(512, 512)),validation_steps=4)
+            img_target_size=(224, 224),
+            mask_target_size=(224, 224)),validation_steps=len(val_basenames))
 
 
 if __name__ == '__main__':

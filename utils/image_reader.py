@@ -25,7 +25,7 @@ def load_img_array(fname, grayscale=False, target_size=None, dim_ordering='defau
     img = load_img(fname,
                    grayscale=grayscale,
                    target_size=target_size)
-    x = img_to_array(img)#, dim_ordering=dim_ordering
+    x = img_to_array(img)
     return x
 
 
@@ -117,27 +117,26 @@ class SegmentationDataGenerator:
         def pad_image(image):
             image_pad_kwargs = dict(mode='reflect')
             image = add_context_margin(image, label_margin, **image_pad_kwargs)
-            return pad_to_square(image, 512, **image_pad_kwargs)
+            return pad_to_square(image, 224, **image_pad_kwargs)
 
         def pad_label(image):
             # Same steps as the image, but the borders are constant white
             label_pad_kwargs = dict(mode='constant', constant_values=255)
             image = add_context_margin(image, label_margin, **label_pad_kwargs)
-            return pad_to_square(image, 512, **label_pad_kwargs)
+            return pad_to_square(image, 224, **label_pad_kwargs)
 
         pairs = ((pad_image(image), pad_label(label)) for
                  image, label in zip(img_arrs, mask_arrs))
 
         # random/center crop
-        def crop_to(image, target_h=512, target_w=512):
+        def crop_to(image, target_h=224, target_w=224):
             # TODO: random cropping
             h_off = (image.shape[0] - target_h) // 2
             w_off = (image.shape[1] - target_w) // 2
             return image[h_off:h_off + target_h,
                    w_off:w_off + target_w, :]
 
-        pairs = ((crop_to(image), crop_to(label)) for
-                 image, label in pairs)
+        pairs = ((crop_to(image), crop_to(label)) for image, label in pairs)
 
         # random augmentation
         augmentation_params = self.random_transformer.random_params_gen()
@@ -156,8 +155,7 @@ class SegmentationDataGenerator:
             # Note that there's no 0..1 normalization in VGG
             return image - pascal_mean
 
-        pairs = ((remove_mean(image), label) for
-                 image, label in pairs)
+        pairs = ((remove_mean(image), label) for image, label in pairs)
 
         def slice_label(image, offset, label_size, stride):
             # Builds label_size * label_size pixels labels, starting from
@@ -201,9 +199,9 @@ class SegmentationDataGenerator:
 
                 # TODO: remove this ugly workaround to skip pairs whose mask
                 # has non-labeled pixels.
-                if 255. in mask:
-                    self.skipped_count += 1
-                    continue
+                #if 255. in mask:
+                #    self.skipped_count += 1
+                #    continue
 
                 i += 1
                 if i == batch_size:
