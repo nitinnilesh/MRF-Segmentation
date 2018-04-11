@@ -1,7 +1,7 @@
 import os
 import random
 from collections import namedtuple
-
+from utils import mask_to_label
 import click
 import numpy as np
 from IPython import embed
@@ -191,6 +191,11 @@ class SegmentationDataGenerator:
             img_batch = np.zeros((batch_size, img_target_size[0], img_target_size[1], 3))
             mask_batch = np.zeros((batch_size, mask_target_size[0] * mask_target_size[1], 1))
             for img, mask in pairs:
+                #mask[mask==255] = 0
+                mask = mask_to_label(mask)
+                mask = mask.astype(int)
+                img = img.astype(np.float64)
+                img = img.astype(float)/255.0
                 # Fill up the batch one pair at a time
                 img_batch[i] = img
                 # Pass the label image as 1D array to avoid the problematic Reshape

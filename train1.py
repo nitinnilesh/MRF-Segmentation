@@ -15,6 +15,7 @@ from utils.image_reader import (
     RandomTransformer,
     SegmentationDataGenerator)
 from keras.utils.multi_gpu_utils import multi_gpu_model
+import keras.backend as K
 
 @click.command()
 @click.option('--train-list-fname', type=click.Path(exists=True),
@@ -42,7 +43,7 @@ def train(train_list_fname,
     transformer_val = RandomTransformer(horizontal_flip=False, vertical_flip=False)
     datagen_val = SegmentationDataGenerator(transformer_val)
 
-    train_desc = '{}-lr{:.0e}-bs{:03d}'.format(
+    '''train_desc = '{}-lr{:.0e}-bs{:03d}'.format(
         time.strftime("%Y-%m-%d %H:%M"),
         learning_rate,
         batch_size)
@@ -55,7 +56,7 @@ def train(train_list_fname,
 
     model_checkpoint = callbacks.ModelCheckpoint(
         checkpoints_folder + '/ep{epoch:02d}-vl{val_loss:.4f}.hdf5',
-        monitor='loss')
+        monitor='loss')'''
 
 
     '''tensorboard_cback = callbacks.TensorBoard(
@@ -73,10 +74,16 @@ def train(train_list_fname,
         min_lr=0.05 * learning_rate)'''
 
     model = DPN((224,224,3))
-    model = multi_gpu_model(model, gpus=2)
-    model.compile(loss='sparse_categorical_crossentropy',
-                  optimizer=optimizers.SGD(lr=1e-50,clipnorm=1.),
-                  metrics=['accuracy'])
+    gpu_model = multi_gpu_model(model, gpus=4)
+    def nll(y_true,y_pred):
+        return K.sum(K.binary_crossentropy(y_true,y_pred),axis=-1)
+    def cross_entropy_2d(y_true,y_pred):
+        log_p = K.softmax(y_pred)
+        mask = y_true>=0
+        y_true = y_true[mask]
+        loss = nll(y_true, y_pred)
+        return loss
+    gpu_model.compile(loss=nll,optimizer=optimizers.Adam(lr=1e-8),metrics=['accuracy'])
 
     # Build absolute image paths
     def build_abs_paths(basenames):
@@ -95,22 +102,23 @@ def train(train_list_fname,
             '{}/skipped.txt'.format(checkpoints_folder), 'a').write(
             '{}\n'.format(datagen_train.skipped_count)))'''
 
-    model.fit_generator(
+    gpu_model.fit_generator(
         datagen_train.flow_from_list(
             train_img_fnames,
             train_mask_fnames,
             shuffle=True,
-            batch_size=4,
+            batch_size=8,
             img_target_size=(224, 224),
             mask_target_size=(224, 224)),
-        steps_per_epoch=len(train_basenames),
-        epochs=20,
+        steps_per_epoch=len(train_basenames)//8,
+        epochs=12,
         validation_data=datagen_val.flow_from_list(
             val_img_fnames,
             val_mask_fnames,
-            batch_size=4,
+            batch_size=8,
             img_target_size=(224, 224),
-            mask_target_size=(224, 224)),validation_steps=len(val_basenames))
+            mask_target_size=(224, 224)),validation_steps=len(val_basenames)//8)
+    model.save('DPN_Adam_12ep_1e_8_wodec.h5')
 
 
 if __name__ == '__main__':

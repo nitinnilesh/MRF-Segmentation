@@ -10,7 +10,7 @@ import h5py
 from keras.applications.vgg16 import VGG16
 import gc
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
-#vgg16 = VGG16(weights='imagenet',include_top=False, input_shape=(224,224,3))
+
 def DPN(input_shape):
 	#Take VGG first 4 blocks, where last block without pool layer
 	vgg16 = VGG16(weights='imagenet',include_top=False, input_shape=(224,224,3))
@@ -19,20 +19,19 @@ def DPN(input_shape):
 	x = Conv2D(512, (5, 5), activation='relu', padding='same', name='block5_conv2')(x)
 	x = Conv2D(512, (5, 5), activation='relu', padding='same', name='block5_conv3')(x)
 	#Block 6
-	#x = Conv2D(512, (25, 25), activation='relu', padding='same', name='block6_conv1', kernel_initializer='glorot_uniform')(x)
+	x = Conv2D(512, (25, 25), activation='relu', padding='same', name='block6_conv1', kernel_initializer='glorot_uniform')(x)
 	x = Conv2D(4096, (1, 1), activation='relu', padding='same', name = 'block6_conv2',kernel_initializer='glorot_uniform')(x)
-	x = Conv2D(1, (1, 1), activation='sigmoid', padding='same', name = 'block6_conv3', kernel_initializer='glorot_uniform')(x)
+	x = Conv2D(1, (1, 1), activation='relu', padding='same', name = 'block6_conv3', kernel_initializer='glorot_uniform')(x)
 	x = UpSampling2D((8,8))(x)
 	x = Reshape((224*224,1))(x)
-	x = Activation('softmax')(x)
+	#x = Activation('softmax')(x)
 	# Model created for Unary terms
 
 	model = Model(inputs=vgg16.input, outputs=x)
 	model.summary()
-	weights_path = 'vgg16_weights.h5'
-	#change_weights_conv(model,vgg16,14,15)
-	#change_weights_conv(model,vgg16, 15,16)
-	#change_weights_conv(model,vgg16, 16,17)
+	change_weights_conv(model,vgg16,14,15)
+	change_weights_conv(model,vgg16, 15,16)
+	change_weights_conv(model,vgg16, 16,17)
 	print('Conv layers weight transfer done')
 	#change_weights_fc1(model, 17, weights_path, obj=[1,1,1,2,2,2,3,3,3,4,4,4,5,5,5,6,6,6], old_dim = (7,7,512,4096), new_dim = (25,25,512,4096))
 	#print('FC1 Done')
@@ -43,7 +42,7 @@ def DPN(input_shape):
 def change_weights_conv(model,vgg16,m_layer_number,v_layer_number,obj = [1,2], new_dim = (5,5,512,512)):
 	weights = vgg16.layers[v_layer_number].get_weights()[0]
 	bias = vgg16.layers[v_layer_number].get_weights()[1]
-	weights_modified = np.zeros(new_dim)
+	weights_modified = np.random.randn(5,5,512,512)*10
 	for i in range(weights.shape[2]):
 		for j in range(weights.shape[3]):
 			temp = np.insert(weights[:,:,i,j],obj,0,axis=1)
@@ -68,7 +67,7 @@ def change_weights_fc1(model, m_layer_number, weights_path, obj, old_dim, new_di
 	new_weights = [weights_modified,bias]
 	model.layers[m_layer_number].set_weights(new_weights)
 	del new_weights
-	gc.coolect()
+	gc.collect()
 
 def change_weights_fc2(model, m_layer_number, weights_path, new_dim):
 	f = h5py.File(weights_path)
@@ -85,7 +84,7 @@ def change_weights_fc2(model, m_layer_number, weights_path, new_dim):
 #K.clear_session()
 
 def main():
-	model = DPN((224,224,3))
+	model = DPN((512,512,3))
 	model.summary()
 	print('done')
 

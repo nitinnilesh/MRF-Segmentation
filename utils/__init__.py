@@ -16,14 +16,20 @@ pascal_palette = np.array([(0, 0, 0)
 
 
 def mask_to_label(mask_rgb):
-    """From color-coded RGB mask to classes [0-21]"""
+    """From color-coded RGB mask to classes [0-21]
     mask_labels = np.zeros(mask_rgb.shape[:2])
 
     for i in range(mask_rgb.shape[0]):
         for j in range(mask_rgb.shape[1]):
             mask_labels[i, j] = pascal_palette.index(tuple(mask_rgb[i, j, :].astype(np.uint8)))
 
-    return mask_labels
+    return mask_labels"""
+    mask = mask_rgb.astype(int)
+    label_mask = np.zeros((mask.shape[0], mask.shape[1]), dtype=np.int16)
+    for ii, label in enumerate(pascal_palette):
+        label_mask[np.where(np.all(mask == label, axis=-1))[:2]] = ii
+    label_mask = label_mask.astype(int)
+    return label_mask
 
 
 def interp_map(prob, zoom, width, height):
