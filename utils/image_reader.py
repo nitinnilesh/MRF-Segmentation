@@ -201,6 +201,7 @@ class SegmentationDataGenerator:
                 # Pass the label image as 1D array to avoid the problematic Reshape
                 # layer after Softmax (see model.py)
                 mask_batch[i] = np.reshape(mask, (-1, 1))
+                #mask_batch[i] = mask
 
                 # TODO: remove this ugly workaround to skip pairs whose mask
                 # has non-labeled pixels.

@@ -21,9 +21,9 @@ def DPN(input_shape):
 	#Block 6
 	x = Conv2D(512, (25, 25), activation='relu', padding='same', name='block6_conv1', kernel_initializer='glorot_uniform')(x)
 	x = Conv2D(4096, (1, 1), activation='relu', padding='same', name = 'block6_conv2',kernel_initializer='glorot_uniform')(x)
-	x = Conv2D(1, (1, 1), activation='relu', padding='same', name = 'block6_conv3', kernel_initializer='glorot_uniform')(x)
+	x = Conv2D(21, (1, 1), activation='relu', padding='same', name = 'block6_conv3', kernel_initializer='glorot_uniform')(x)
 	x = UpSampling2D((8,8))(x)
-	x = Reshape((224*224,1))(x)
+	#x = Reshape((224*224,1))(x)
 	#x = Activation('softmax')(x)
 	# Model created for Unary terms
 
@@ -84,7 +84,7 @@ def change_weights_fc2(model, m_layer_number, weights_path, new_dim):
 #K.clear_session()
 
 def main():
-	model = DPN((512,512,3))
+	model = DPN((224,224,3))
 	model.summary()
 	print('done')
 
