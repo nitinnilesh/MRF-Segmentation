@@ -1,7 +1,9 @@
 # MRF-Segmentation
-Markov Random field based semantic segmentation implemented as project for Computer Vision (CSE 578) course at IIIT Hyderabad.
+Markov Random field based semantic segmentation using Deep Learning implemented as project for Computer Vision (CSE 578) course at [IIIT Hyderabad](https://www.iiit.ac.in/).
 
-To run this code:
-1. Place VOC dataset here. See the path used in image_reader.py
+Paper Followed - [Deep Learning Markov Random Field for Semantic Segmentation](https://arxiv.org/pdf/1606.07230.pdf)
 
-Train the model with your choice of optimizer, lr, decay etc. Choose a loss method. We can implement our ideas individually and see what works. :smiley:
+Github Link - [MRF-Segmentation](https://github.com/Pi-Rasp/MRF-Segmentation)
+
+Authors - [Nitin Nilesh](https://github.com/Pi-Rasp), [Abhinav Dhere](https://github.com/abhinavdhere), [Ashish Kubade](https://github.com/Ashj9)
+
